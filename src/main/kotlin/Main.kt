@@ -26,11 +26,11 @@ class CamelFileEndpoint(streamContext: StreamContext, private val path: String) 
         return "file://$path"
     }
 
-    fun newSource(): Source<ByteArray, NotUsed> {
+    fun receive(): Source<ByteArray, NotUsed> {
         return receiveBody(toUri(), ByteArray::class.java)
     }
 
-    fun newSink(): Graph<FlowShape<ByteArray, ByteArray>, NotUsed> {
+    fun send(): Graph<FlowShape<ByteArray, ByteArray>, NotUsed> {
         return sendBody<ByteArray>(toUri())
     }
 }
@@ -46,8 +46,8 @@ fun main(args: Array<String>) {
     val toUpperCase = Flow.fromFunction<ByteArray, ByteArray> { String(it).toUpperCase().toByteArray() }
     val runnableGraph = RunnableGraph.fromGraph(GraphDSL.create { builder ->
         val toUpperCaseShape = builder.add(toUpperCase)
-        val input = builder.add(fileInput.newSource())
-        val output = builder.add(fileOutput.newSink())
+        val input = builder.add(fileInput.receive())
+        val output = builder.add(fileOutput.send())
         val fileSink = builder.add(Sink.ignore())
         builder.from(input.out()).toInlet(toUpperCaseShape.`in`())
         builder.from(toUpperCaseShape.out()).toInlet(output.`in`())
